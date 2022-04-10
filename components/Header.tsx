@@ -11,7 +11,7 @@ function Header() {
     <div className='mb-5'>
         <header className='flex justify-between items-center p-2'>
             <Link href='/'>
-                <h1 className='w-52 cursor-pointer text-xl font-extralight sm:w-80'>The <span className='font-extrabold underline decoration-pink-600/50'>PAPAFAM</span> NFT Market Place</h1>
+                <h1 className='w-52 cursor-pointer text-xl font-extralight sm:w-80'>The <span className='font-extrabold underline decoration-pink-600/50'>NEXTJS</span> NFT Market Place</h1>
             </Link>
             <div>
                 {address ? (
