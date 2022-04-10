@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { useAddress,useNFTDrop } from "@thirdweb-dev/react";
-import Link from 'next/link';
-import toast, {Toaster} from 'react-hot-toast';
-import { BigNumber } from 'ethers';
 import { GetServerSideProps } from 'next';
+import { useAddress,useNFTDrop } from "@thirdweb-dev/react";
+import { NFTMetadataOwner } from '@thirdweb-dev/sdk';
+import { BigNumber } from 'ethers';
+import toast, {Toaster} from 'react-hot-toast';
+import { Dialog } from '@material-ui/core';
+import Header from '../../components/Header';
 import { sanityClient, urlFor } from '../../sanity';
 import { Collection } from '../../typings';
-import Header from '../../components/Header';
 
 interface Props {
   collection: Collection
@@ -22,7 +23,10 @@ function NFTDrop({collection}: Props) {
   const [totalSupply, setTotalSupply] = useState<BigNumber>()
   const [priceInETH, setPriceInETH] = useState<string>()
   const [loading, setLoading] = useState<boolean>(true)
-  
+  const [NFTClaimedData, setNFTClaimedData] = useState<NFTMetadataOwner>()
+  const [NFTProperties, setNFTProperties] = useState<Array<string>>([])
+  const [open, setOpen] = useState<boolean>(false)
+
   // Use Effect
   useEffect(() => {
     if (!nftDrop) return
@@ -54,6 +58,14 @@ function NFTDrop({collection}: Props) {
   },[nftDrop])
   
   // Functions
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   const mintNFT = () => {
     if(!address || !nftDrop) return
 
@@ -72,9 +84,7 @@ function NFTDrop({collection}: Props) {
     })
     nftDrop?.claimTo(address, quantity).then(
       async (tx) => {
-        const receipt = tx[0].receipt
-        const claimedTokenId = tx[0].id
-        const claimedNFT = tx[0].data()
+        const claimedNFT = await tx[0].data()
         
         toast('You Successfully Minted!', {
           duration: 8000,
@@ -86,10 +96,15 @@ function NFTDrop({collection}: Props) {
             padding: '20px'
           }
         })
+        setNFTClaimedData(claimedNFT)
+        const properties:any = []
+        const p:any = claimedNFT.metadata.properties
+        for (let key of Object.keys(p)) {
+          properties.push(p[key])
+        }
 
-        console.log(receipt)
-        console.log(claimedTokenId)
-        console.log(claimedNFT)
+        setNFTProperties(properties)
+        handleOpen()
       }
     ).catch(error => {
       console.log(error)
@@ -106,11 +121,39 @@ function NFTDrop({collection}: Props) {
       setLoading(false)
       toast.dismiss(notification)
     })
-
   }
+
   return (
-    <div className='flex h-screen flex-col lg:grid lg:grid-cols-10'>
-      <Toaster position='bottom-center' />
+    <div className='relative flex h-screen flex-col lg:grid lg:grid-cols-10'>
+      <Toaster position='bottom-right' />
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="Claimed NFT modal"
+        aria-describedby="Claimed NFT"
+      >
+        <div className='bg-white rounded-2xl shadow-xl px-10 py-8'> 
+            <h2 className='text-center text-rose-400 text-4xl text-bold mb-5'>Your's Claimed NFT</h2>
+            <div className='flex flex-col items-center space-y-3'>
+              <img className='h-72 w-72 lg:h-80 lg:w-80' src={NFTClaimedData?.metadata.image} alt={NFTClaimedData?.metadata.name} />
+              <div>
+                <p className='text-lg text-bold text-gray-700'>Name: <span className='font-light text-gray-600'>{NFTClaimedData?.metadata.name}</span></p>
+                <p className='text-lg text-bold text-gray-700'>Description: <span className='font-light text-gray-600'>{NFTClaimedData?.metadata.description}</span> </p>
+                <p className='text-lg text-bold text-gray-700'>Owner: <span className='font-light text-gray-600'>{NFTClaimedData?.owner.substring(0, 5)}...{NFTClaimedData?.owner.substring(NFTClaimedData?.owner.length - 5)}</span> </p>
+                <p className='text-lg text-bold text-gray-700'>Properties: </p>
+                <div className='flex p-3 flex-wrap space-x-2'>
+                  {
+                    NFTProperties?.map(property => (
+                      <span className='px-4 py-2 rounded-full cursor-pointer bg-green-100 text-green-700 text-base font-bold border-2 border-green-400'>{property}</span>
+                    ))
+                  }
+                </div>
+
+                <button className='w-full py-2 bg-rose-500 text-white font-bold text-lg rounded-lg mt-5' onClick={handleClose}>Close</button>
+              </div>
+            </div>
+        </div>
+      </Dialog>
         <div className='bg-gradient-to-br from-cyan-800 to-rose-500 lg:col-span-4'>
             <div className='flex flex-col justify-center items-center py-2 lg:min-h-screen'>
                 <div className='bg-gradient-to-br from-yellow-400 to-purple-600 p-2 rounded-xl'>
@@ -151,12 +194,14 @@ function NFTDrop({collection}: Props) {
           {
             loading ? (
               <>Loading...</>
-            ) : claimSupply === totalSupply?.toNumber() ? (
-                <>Sold Out</>
-              ) : !address ? (
-                  <>Sign In to Mint</>
-                ) : (
-                    <span>Mint NFT ({ priceInETH } ETH)</span>                    
+            ) : 
+            claimSupply === totalSupply?.toNumber() ? (
+              <>Sold Out</>
+            ) : 
+            !address ? (
+              <>Sign In to Mint</>
+            ) : (
+              <span>Mint NFT ({ priceInETH } ETH)</span>                    
             )
           }
           </button>

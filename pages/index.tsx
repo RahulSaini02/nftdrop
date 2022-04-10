@@ -1,5 +1,5 @@
-import type { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import type { GetServerSideProps } from 'next'
 import { sanityClient } from '../sanity'
 import { Collection } from '../typings'
 import Header from '../components/Header';
@@ -18,6 +18,7 @@ const Home = ({ collections }: Props) => {
       <Head>
         <title>NFT Drop</title>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
       </Head>
       <Header />
       <main className='bg-slate-100 rounded-xl p-10 shadow-xl shadow-rose-400/20'>
